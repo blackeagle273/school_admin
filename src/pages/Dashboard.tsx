@@ -6,7 +6,7 @@ import NavBar from "@/components/NavBar";
 import DeviceCard from "@/components/DeviceCard";
 import { getDevices, createDevice, toggleDevice, Device } from "@/api/devices";
 import { getMe } from "@/api/auth";
-import { websocketService } from '@/services/websocket';
+import { useWebSocket } from "@/hooks/useWebSocket";
 
 const Dashboard = () => {
   const [devices, setDevices] = useState<Device[]>([]);
@@ -54,6 +54,8 @@ const Dashboard = () => {
     }
   };
 
+  const { sendMessage } = useWebSocket(handleWebSocketMessage);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     console.log(token);
@@ -79,14 +81,6 @@ const Dashboard = () => {
 
     fetchData();
   }, [navigate]);
-
-  useEffect(() => {
-    websocketService.addMessageHandler(handleWebSocketMessage);
-
-    return () => {
-      websocketService.removeMessageHandler(handleWebSocketMessage);
-    };
-  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -116,16 +110,30 @@ const Dashboard = () => {
     }
   };
 
-  const handleToggleDevice = async (device: Device) => {
+  const handleToggleDevice = async (deviceId: string) => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
     try {
-      await toggleDevice(device.device_id, token);
-      // Send WebSocket message about state change
-      websocketService.sendDeviceStateChange(device);
-    } catch (error) {
-      console.error('Error toggling device:', error);
+      await toggleDevice(deviceId, token);
+      setDevices(devices.map(device => 
+        device.device_id === deviceId 
+          ? { ...device, is_active: !device.is_active }
+          : device
+      ));
+      
+      // Send WebSocket message about device state change
+      sendMessage({
+        type: 'lesson_state_change',
+        deviceId: deviceId,
+        isActive: !devices.find(d => d.device_id === deviceId)?.is_active
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.detail || "Failed to toggle device",
+        variant: "destructive",
+      });
     }
   };
 
@@ -146,7 +154,7 @@ const Dashboard = () => {
               deviceId={String(id+1)}
               isActive={device.is_active}
               status={device.status}
-              onToggleActive={() => handleToggleDevice(device)}
+              onToggleActive={() => handleToggleDevice(device.device_id)}
             />
           ))}
         </div>
