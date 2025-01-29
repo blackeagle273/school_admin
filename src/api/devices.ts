@@ -31,7 +31,7 @@ export const createDevice = async (deviceId: string, token: string): Promise<Dev
 };
 
 export const toggleDevice = async (deviceId: string, token: string): Promise<void> => {
-  await axios.put(`${API_URL}toggle/${deviceId}`, null, {
+  await axios.put(`${API_URL}/toggle/${deviceId}`, null, {
     headers: {
       Authorization: `Bearer ${token}`
     }
