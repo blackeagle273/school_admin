@@ -1,43 +1,52 @@
+import { Device } from "@/api/devices";
+
 type MessageHandler = (message: any) => void;
 
 class WebSocketService {
-  private ws: WebSocket | null = null;
+  private socket: WebSocket | null = null;
   private messageHandlers: Set<MessageHandler> = new Set();
+  private readonly wsUrl = 'wss://app-sparc-dev-wus-001.azurewebsites.net/ws';
 
   connect() {
-    this.ws = new WebSocket('wss://app-sparc-dev-wus-001.azurewebsites.net/ws');
+    if (this.socket?.readyState === WebSocket.OPEN) return;
 
-    this.ws.onopen = () => {
-      console.log('WebSocket Connected');
+    this.socket = new WebSocket(this.wsUrl);
+
+    this.socket.onopen = () => {
+      console.log("WebSocket connected");
     };
 
-    this.ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('Received message:', data);
-      this.messageHandlers.forEach(handler => handler(data));
+    this.socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log("Received message:", data);
+        this.messageHandlers.forEach(handler => handler(data));
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
     };
 
-    this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-
-    this.ws.onclose = () => {
-      console.log('WebSocket disconnected');
-      // Attempt to reconnect after 5 seconds
+    this.socket.onclose = () => {
+      console.log("WebSocket closed");
+      // Try to reconnect after 5 seconds
       setTimeout(() => this.connect(), 5000);
+    };
+
+    this.socket.onerror = (error) => {
+      console.error("WebSocket error:", error);
     };
   }
 
   disconnect() {
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
+    if (this.socket) {
+      this.socket.close();
+      this.socket = null;
     }
   }
 
   sendMessage(message: any) {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message));
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify(message));
     } else {
       console.error('WebSocket is not connected');
     }
@@ -50,6 +59,19 @@ class WebSocketService {
   removeMessageHandler(handler: MessageHandler) {
     this.messageHandlers.delete(handler);
   }
+
+  // Helper method to send device state changes
+  sendDeviceStateChange(device: Device) {
+    this.sendMessage({
+      type: 'lesson_state_change',
+      deviceId: device.device_id,
+      isActive: device.is_active
+    });
+  }
 }
 
-export const websocketService = new WebSocketService(); 
+// Create a singleton instance
+export const websocketService = new WebSocketService();
+
+// Auto-connect when the service is imported
+websocketService.connect(); 
