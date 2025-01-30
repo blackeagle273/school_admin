@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/devices/';
+const API_URL = 'https://app-sparc-dev-wus-001.azurewebsites.net/api/devices/';
 
 export interface Device {
   id: number;

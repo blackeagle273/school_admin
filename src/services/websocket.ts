@@ -5,7 +5,7 @@ class WebSocketService {
   private messageHandlers: Set<MessageHandler> = new Set();
 
   connect() {
-    this.ws = new WebSocket('ws://localhost:8000/ws');
+    this.ws = new WebSocket('wss://app-sparc-dev-wus-001.azurewebsites.net/ws');
 
     this.ws.onopen = () => {
       console.log('WebSocket Connected');
