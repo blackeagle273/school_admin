@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { SignUpData, SignInData, AuthResponse, User } from '../types/auth';
 
-const API_URL = 'https://app-sparc-dev-wus-001.azurewebsites.net/api/auth';
+const API_URL = 'http://localhost:8000/api/auth';
 
 export const signUp = async (data: SignUpData): Promise<User> => {
   const response = await axios.post(`${API_URL}/register`, data);

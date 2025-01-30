@@ -115,7 +115,7 @@ const Dashboard = () => {
     if (!token) return;
 
     try {
-      await toggleDevice(deviceId, token);
+      // await toggleDevice(deviceId, token);
       setDevices(devices.map(device => 
         device.device_id === deviceId 
           ? { ...device, is_active: !device.is_active }
